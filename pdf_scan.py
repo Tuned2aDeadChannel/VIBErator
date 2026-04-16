@@ -20,10 +20,10 @@ import json
 from pathlib import Path
 
 try:
-    import pdfplumber
+    from pypdf import PdfReader
 except ImportError:
-    print("ERROR: pdfplumber is not installed.")
-    print("Run:  pip install pdfplumber")
+    print("ERROR: pypdf is not installed.")
+    print("Run:  pip install pypdf")
     sys.exit(1)
 
 
@@ -70,32 +70,31 @@ def scan_pdf(pdf_path: Path) -> dict:
         'skipped' — [page_numbers that had insufficient text]
         'stats'   — summary counts
     """
-    found = {}       # label → list of page numbers where it appears
-    skipped = []     # page numbers with too little text (likely images)
-    total_pages = 0
+    found = {}
+    skipped = []
 
-    with pdfplumber.open(pdf_path) as pdf:
-        total_pages = len(pdf.pages)
-        for i, page in enumerate(pdf.pages):
-            page_num = i + 1  # 1-indexed
-            text = page.extract_text() or ""
+    reader = PdfReader(pdf_path)
+    total_pages = len(reader.pages)
 
-            if len(text.strip()) < MIN_TEXT_LENGTH:
-                skipped.append(page_num)
-                continue
+    for i, page in enumerate(reader.pages):
+        page_num = i + 1
+        text = page.extract_text() or ""
 
-            for _pattern_name, pattern in LABEL_PATTERNS:
-                for match in pattern.finditer(text):
-                    raw = match.group(1)
-                    label = normalize_label(raw)
-                    if not label:
-                        continue
-                    if label not in found:
-                        found[label] = []
-                    if page_num not in found[label]:
-                        found[label].append(page_num)
+        if len(text.strip()) < MIN_TEXT_LENGTH:
+            skipped.append(page_num)
+            continue
 
-    # Flag labels that appear on more than one page (cross-references vs. actual captions)
+        for _pattern_name, pattern in LABEL_PATTERNS:
+            for match in pattern.finditer(text):
+                raw = match.group(1)
+                label = normalize_label(raw)
+                if not label:
+                    continue
+                if label not in found:
+                    found[label] = []
+                if page_num not in found[label]:
+                    found[label].append(page_num)
+
     duplicates = {k: v for k, v in found.items() if len(v) > 1}
 
     return {
