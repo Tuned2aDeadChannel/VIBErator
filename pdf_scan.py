@@ -30,17 +30,19 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Label patterns — add or remove patterns here to tune for different documents
 # Each entry is (pattern_name, compiled_regex)
-# The regex must have a named group called 'label' capturing the full label text
+# Each regex must have one capturing group (group 1) capturing the full label text.
 # ---------------------------------------------------------------------------
 LABEL_PATTERNS = [
     # "Figure 3-3:", "Figure 3-3 —", "Figure 3-3 " (space before title)
     ("Figure",  re.compile(r'(?i)\b(fig(?:ure)?\.?\s+\d+[\-–]\d+(?:\.\d+)*(?:\s*[:\-–]|\s))', re.MULTILINE)),
     # "Figure 3:" or "Figure 3 " (single number, no section prefix)
-    ("Figure",  re.compile(r'(?i)\b(fig(?:ure)?\.?\s+\d+(?:\s*[:\-–]|\s))', re.MULTILINE)),
+    # Negative lookahead (?![\-–]\d) prevents matching "Figure 3" inside "Figure 3-3".
+    ("Figure",  re.compile(r'(?i)\b(fig(?:ure)?\.?\s+\d+(?![\-–]\d)(?:\s*[:\-–]|\s))', re.MULTILINE)),
     # "Table 4-2:", "Table 4-2 —"
     ("Table",   re.compile(r'(?i)\b(table\s+\d+[\-–]\d+(?:\.\d+)*(?:\s*[:\-–]|\s))', re.MULTILINE)),
     # "Table 4:" or "Table 4 "
-    ("Table",   re.compile(r'(?i)\b(table\s+\d+(?:\s*[:\-–]|\s))', re.MULTILINE)),
+    # Negative lookahead (?![\-–]\d) prevents matching "Table 4" inside "Table 4-2".
+    ("Table",   re.compile(r'(?i)\b(table\s+\d+(?![\-–]\d)(?:\s*[:\-–]|\s))', re.MULTILINE)),
     # "Chart 2-1:", "Diagram 5-3:"
     ("Chart",   re.compile(r'(?i)\b(chart\s+\d+[\-–]?\d*(?:\s*[:\-–]|\s))', re.MULTILINE)),
     ("Diagram", re.compile(r'(?i)\b(diagram\s+\d+[\-–]?\d*(?:\s*[:\-–]|\s))', re.MULTILINE)),
